@@ -1,0 +1,23 @@
+SudoNotch - a notch for your Mac (works with or without a real notch; needs macOS 14 or newer)
+
+INSTALL
+1. Drag SudoNotch onto the Applications folder in this window.
+2. Open SudoNotch from your Applications folder.
+
+SudoNotch is notarized by Apple, so it should open normally. If macOS still shows a
+warning the first time, go to System Settings > Privacy & Security and click "Open Anyway".
+
+WHAT IT DOES
+  - Hover the notch at the top of your screen to open it: music controls, clipboard
+    history, a file shelf, AirDrop, and a Tools tab.
+  - Tools: lock your keyboard so you can clean it, a switch that keeps your Mac
+    running with the lid closed for a set time, and Caffeinate. The keyboard lock needs Accessibility access
+    (System Settings > Privacy & Security > Accessibility). The lid switch asks for
+    your Mac password once, the first time. Don't put a Mac in a bag while the lid switch is on.
+  - Shows battery, Bluetooth and volume/brightness popups in the notch.
+  - Rounds the corners of your display on Macs without a notch, with an animation
+    when you use your macOS hot corners (System Settings > Desktop & Dock).
+  - Starts when you log in. Change that in Settings (the gear in the notch).
+
+If macOS asks to control Music/Spotify or use Bluetooth, click Allow. That's
+what makes the music controls and Bluetooth popups work.

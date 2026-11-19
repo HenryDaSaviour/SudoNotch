@@ -34,5 +34,6 @@ Without `SIGN_ID` the app is ad-hoc signed, and macOS will ask you to use "Open 
 
 ## Releases
 
+- **v1.1.0**: Liquid Glass buttons and menus on macOS 26+, a smooth tuck-away when a full-screen app is in use, and Settings toggles to show or hide the notch and the rounded corners (never both off).
 - **v1.0.0**: SudoNotch, notarized, Spotlight-style controls, lid-closed timer, Caffeinate, smoother open and close animation.
 - **v0.1.0-pseudonotch**: the first build, when the app was still called PseudoNotch. Ad-hoc signed, so it needs "Open Anyway". Kept for history.

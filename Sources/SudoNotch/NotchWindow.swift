@@ -10,6 +10,8 @@ final class NotchPanel: NSPanel {
 /// Owns the transparent panel that hosts the notch UI and drives hover / drag expansion.
 final class NotchWindowController {
     static let windowSize = CGSize(width: 720, height: 340)
+    static let hideCurve = Animation.timingCurve(0.5, 0, 0.75, 0, duration: 0.34)      // eases in: gathers speed as it tucks away
+    static let revealSpring = Animation.spring(response: 0.5, dampingFraction: 0.82)
     static let spring = Animation.spring(response: 0.38, dampingFraction: 0.9)   // settles quickly with just a hint of overshoot
 
     let model: NotchModel
@@ -159,9 +161,25 @@ final class NotchWindowController {
         }
         if !panel.isVisible { panel.orderFrontRegardless() }
         let hide = fullscreenHidden && settings.hideInFullscreen && !model.isExpanded
-        let alpha: CGFloat = hide ? 0 : 1
-        if panel.alphaValue != alpha { panel.alphaValue = alpha }
-        if model.isHidden != hide { model.isHidden = hide }
+        if !debugHoldHide { setHidden(hide) }
+    }
+
+    var debugHoldHide = false   // test hook only: keeps the real full-screen detection from overriding a manual hide/reveal
+    private var hideWork: DispatchWorkItem?
+
+    /// Tucks the notch up into the top edge (slide + shrink + fade) when a full-screen app is in use, and drops it back down after.
+    /// The panel only goes fully transparent once the tuck has finished, so nothing is drawn or clickable while it is away.
+    func setHidden(_ hide: Bool) {
+        hideWork?.cancel(); hideWork = nil
+        if hide {
+            if !model.isHidden { withAnimation(Self.hideCurve) { model.isHidden = true } }
+            let w = DispatchWorkItem { [weak self] in if self?.model.isHidden == true { self?.panel.alphaValue = 0 } }
+            hideWork = w
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: w)
+        } else {
+            if panel.alphaValue != 1 { panel.alphaValue = 1 }
+            if model.isHidden { withAnimation(Self.revealSpring) { model.isHidden = false } }
+        }
     }
 
     // MARK: Mouse

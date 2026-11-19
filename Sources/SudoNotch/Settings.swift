@@ -86,6 +86,14 @@ struct Pref<Value> {
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    /// Corners are only drawn on Macs without a real notch.
+    static var hasHardwareNotch: Bool { NSScreen.screens.contains { $0.safeAreaInsets.top > 0 } }
+
+    private init() {
+        // The notch and the rounded corners can't both be off (an older saved setting could have been)
+        if (!notchEnabled && !cornersEnabled) || (Self.hasHardwareNotch && !notchEnabled) { notchEnabled = true }
+    }
+
     // Notch
     @Pref("notchEnabled", true) var notchEnabled: Bool
     @Pref("notchWidth", 190.0) var notchWidth: Double

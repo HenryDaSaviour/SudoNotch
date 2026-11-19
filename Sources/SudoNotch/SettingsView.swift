@@ -224,9 +224,27 @@ struct GeneralPage: View {
     @ObservedObject var settings: AppSettings
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var status = LoginItem.statusText
+    /// The last thing left on can't be switched off, and on a real-notch Mac the corners don't apply at all.
+    private var notchLocked: Bool { AppSettings.hasHardwareNotch || (settings.notchEnabled && !settings.cornersEnabled) }
+    private var cornersLocked: Bool { AppSettings.hasHardwareNotch || (settings.cornersEnabled && !settings.notchEnabled) }
 
     var body: some View {
         PageHeader(page: .general, subtitle: "How SudoNotch behaves on your Mac")
+        Card("What to show") {
+            ToggleRow(title: "Show the notch",
+                      subtitle: AppSettings.hasHardwareNotch ? "Always on for Macs with a real notch"
+                                : (settings.notchEnabled && !settings.cornersEnabled ? "Turn on rounded corners to hide the notch" : "The black bar with music, clipboard, shelf and tools"),
+                      isOn: Binding(get: { settings.notchEnabled },
+                                    set: { v in if v || settings.cornersEnabled { settings.notchEnabled = v } }))
+                .opacity(notchLocked ? 0.5 : 1).disabled(notchLocked)
+            ToggleRow(title: "Round the screen corners",
+                      subtitle: AppSettings.hasHardwareNotch ? "Not available on Macs with a real notch"
+                                : (settings.cornersEnabled && !settings.notchEnabled ? "Turn on the notch to hide the corners" : "Rounds the corners of your display like a new MacBook"),
+                      last: true,
+                      isOn: Binding(get: { settings.cornersEnabled },
+                                    set: { v in if v || settings.notchEnabled { settings.cornersEnabled = v } }))
+                .opacity(cornersLocked ? 0.5 : 1).disabled(cornersLocked)
+        }
         Card("Startup") {
             ToggleRow(title: "Open at login", subtitle: status, last: true,
                       isOn: Binding(get: { launchAtLogin }, set: { v in
@@ -256,7 +274,6 @@ struct NotchPage: View {
     var body: some View {
         PageHeader(page: .notch, subtitle: "Your fake notch and what lives in it")
         Card("Notch") {
-            ToggleRow(title: "Show the notch", isOn: $settings.notchEnabled)
             SliderRow(title: "Width", subtitle: "Ignored on Macs with a real notch", value: $settings.notchWidth, range: 120...300)
             ToggleRow(title: "Match menu bar height", subtitle: "Keeps the notch flush with the bottom of the menu bar",
                       last: settings.matchMenuBar, isOn: $settings.matchMenuBar)
@@ -290,7 +307,6 @@ struct CornersPage: View {
     var body: some View {
         PageHeader(page: .corners, subtitle: "Round the corners of your display like a new MacBook")
         Card("Rounded corners") {
-            ToggleRow(title: "Round the screen corners", isOn: $settings.cornersEnabled)
             SliderRow(title: "Radius", last: true, value: $settings.cornerRadius, range: 4...32,
                       format: { String(format: "%.0f pt", $0) })
         }

@@ -163,6 +163,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? FileManager.default.copyItem(at: dir.appendingPathComponent("notch.png"), to: dir.appendingPathComponent("notch-\(ms).png"))
                 }
             }
+        case "hidenotch":   // hidenotch/on|off/<ms>: run the full-screen tuck-away (or reveal), snapshot <ms> into it -> notch-<ms>.png
+            if parts.count > 2, let ms = Int(parts[2]) {
+                notch.setHidden(parts[1] == "on")
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) { [weak self] in
+                    self?.snapshot()
+                    let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/SudoNotch")
+                    try? FileManager.default.removeItem(at: dir.appendingPathComponent("notch-\(ms).png"))
+                    try? FileManager.default.copyItem(at: dir.appendingPathComponent("notch.png"), to: dir.appendingPathComponent("notch-\(ms).png"))
+                }
+            }
+        case "hideseq":   // hideseq/on|off: tuck away (or reveal) and snapshot at fixed times -> seq-<ms>.png
+            let on = parts.count > 1 && parts[1] == "on"
+            let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/SudoNotch")
+            notch.debugHoldHide = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in self?.notch.debugHoldHide = false }
+            notch.setHidden(on)
+            for ms in [0, 60, 120, 180, 260, 450] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) { [weak self] in
+                    // Layer render keeps SwiftUI's opacity / offset / scale, which cacheDisplay drops.
+                    guard let v = self?.notch.panel.contentView, let layer = v.layer else { return }
+                    let img = NSImage(size: v.bounds.size, flipped: false) { r in
+                        NSColor(white: 0.85, alpha: 1).setFill(); r.fill()
+                        if let ctx = NSGraphicsContext.current?.cgContext { layer.render(in: ctx) }
+                        return true
+                    }
+                    if let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+                       let data = rep.representation(using: .png, properties: [:]) { try? data.write(to: dir.appendingPathComponent("seq-\(ms).png")) }
+                }
+            }
         case "dump": dumpState()
         case "snap": snapshot()
         case "settingsPage":
@@ -186,7 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             "loginItem": LoginItem.isEnabled, "locked": model.isLocked,
             "lockScreenAvailable": LockScreenSupport.shared.isAvailable, "panelSpaces": LockScreenSupport.shared.debugSpaces(for: notch.panel),
             "keyboardLocked": model.keyboard.isLocked, "keyboardNeedsPermission": model.keyboard.needsPermission,
-            "lidAwake": model.lid.isAwakeWhenClosed, "lockScreenStatus": Int(LockScreenSupport.shared.lastStatus), "screen": NSStringFromRect(notch.screen?.frame ?? .zero),
+            "lidAwake": model.lid.isAwakeWhenClosed, "notchHidden": model.isHidden, "lockScreenStatus": Int(LockScreenSupport.shared.lastStatus), "screen": NSStringFromRect(notch.screen?.frame ?? .zero),
         ]
         if let data = try? JSONSerialization.data(withJSONObject: state, options: [.prettyPrinted, .sortedKeys]) {
             try? data.write(to: dir.appendingPathComponent("state.json"))

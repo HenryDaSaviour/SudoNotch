@@ -55,6 +55,9 @@ struct NotchRootView: View {
         }
         .frame(width: size.width, height: size.height)
         .clipShape(shape)   // everything, including content that is fading out, is cut to the notch outline
+        .scaleEffect(model.isHidden ? 0.82 : 1, anchor: .top)
+        .offset(y: model.isHidden ? -(size.height + 6) : 0)
+        .opacity(model.isHidden ? 0 : 1)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(NotchWindowController.spring, value: model.layoutKey)
         .animation(.easeInOut(duration: 0.2), value: model.transient)
@@ -277,7 +280,7 @@ struct MusicView: View {
                     .font(.system(size: 12.5)).foregroundStyle(.white.opacity(0.55))
                 HStack {
                     ForEach(MusicService.Source.allCases, id: \.rawValue) { s in
-                        Button(s.rawValue) { music.open(s) }.buttonStyle(PillButtonStyle(fixedWidth: false))
+                        Button(s.rawValue) { music.open(s) }.pillButton(stretch: false)
                     }
                 }
             }
@@ -571,12 +574,12 @@ struct ControlsCards: View {
                 if keyboard.needsPermission {
                     toolCaption("Allow SudoNotch under Privacy & Security → Accessibility, then try again.", warning: true)
                 }
-                VStack(alignment: .leading, spacing: 6) {
+                GlassGroup(spacing: 8) { VStack(alignment: .leading, spacing: 6) {
                     if !keyboard.isLocked {
                         PillMenu(selection: $keyboard.minutes, options: [("1 min", 1), ("2 min", 2), ("5 min", 5), ("10 min", 10), ("Until unlocked", 0)])
-                    }
+                    } }
                     Button(keyboard.isLocked ? "Unlock · \(keyboard.timeString)" : "Lock keyboard") { keyboard.toggle() }
-                        .buttonStyle(PillButtonStyle(prominent: keyboard.isLocked))
+                        .pillButton(prominent: keyboard.isLocked)
                 }
             }
             ToolCard {
@@ -587,16 +590,16 @@ struct ControlsCards: View {
                                           : "OFF. First time only: macOS asks for your password once, then it never asks again.")),
                             warning: lid.message != nil)
                 Spacer(minLength: 0)
-                VStack(alignment: .leading, spacing: 6) {
+                GlassGroup(spacing: 8) { VStack(alignment: .leading, spacing: 6) {
                     if !lid.isAwakeWhenClosed {
                         HStack(spacing: 6) {
                             PillMenu(selection: $lid.minutes, options: [("15 min", 15), ("30 min", 30), ("1 hour", 60), ("2 hours", 120), ("4 hours", 240),
                                                                     ("8 hours", 480), ("12 hours", 720), ("Until…", -1)])
                             if lid.minutes < 0 { WakeTimeRow(time: $lid.wakeTime) }
                         }
-                    }
+                    } }
                     Button(lid.isBusy ? "Working…" : (lid.isAwakeWhenClosed ? "Turn off" : "Turn on")) { lid.toggle() }
-                        .buttonStyle(PillButtonStyle(prominent: lid.isAwakeWhenClosed)).disabled(lid.isBusy)
+                        .pillButton(prominent: lid.isAwakeWhenClosed).disabled(lid.isBusy)
                 }
             }
             ToolCard {
@@ -604,16 +607,16 @@ struct ControlsCards: View {
                 toolCaption(caffeine.isOn ? "Your Mac and screen stay awake\(caffeine.timeString == "On" ? "." : " until \(caffeine.endString) (\(caffeine.timeString) left).")"
                                           : "Stops your Mac and screen from sleeping. Same as the caffeinate command.")
                 Spacer(minLength: 0)
-                VStack(alignment: .leading, spacing: 6) {
+                GlassGroup(spacing: 8) { VStack(alignment: .leading, spacing: 6) {
                     if !caffeine.isOn {
                         HStack(spacing: 6) {
                             PillMenu(selection: $caffeine.minutes, options: [("15 min", 15), ("30 min", 30), ("1 hour", 60), ("2 hours", 120), ("4 hours", 240),
                                                                          ("8 hours", 480), ("12 hours", 720), ("Until…", -1), ("Until off", 0)])
                             if caffeine.minutes < 0 { WakeTimeRow(time: $caffeine.wakeTime) }
                         }
-                    }
+                    } }
                     Button(caffeine.isOn ? "Stop" : "Stay awake") { caffeine.toggle() }
-                        .buttonStyle(PillButtonStyle(prominent: caffeine.isOn))
+                        .pillButton(prominent: caffeine.isOn)
                 }
             }
         }

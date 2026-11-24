@@ -83,7 +83,8 @@ final class NotchModel: ObservableObject {
         }
     }
 
-    var collapsedSize: CGSize { CGSize(width: baseSize.width + 2 * wing, height: baseSize.height) }
+    /// With the notch switched off the idle shape is just the corner itself, and the menu grows out of it.
+    var collapsedSize: CGSize { cornerMode ? CGSize(width: 18, height: 18) : CGSize(width: baseSize.width + 2 * wing, height: baseSize.height) }
     var expandedSize: CGSize { CGSize(width: max(Self.expandedWidth, baseSize.width + 460), height: baseSize.height + tab.expandedHeight - 32) }
     var currentSize: CGSize { isExpanded ? expandedSize : collapsedSize }
 

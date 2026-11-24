@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 struct NotchShape: Shape {
     var topRadius: CGFloat
     var bottomRadius: CGFloat
+    /// Pop-out menu mode: the right side is flush with the screen corner (square), so it looks like it grows out of the corner.
+    var flushRight = false
 
     var animatableData: AnimatablePair<CGFloat, CGFloat> {
         get { .init(topRadius, bottomRadius) }
@@ -14,6 +16,16 @@ struct NotchShape: Shape {
         let tr = min(topRadius, rect.width / 4)
         let br = min(bottomRadius, rect.height / 2, rect.width / 4)
         var p = Path()
+        if flushRight {
+            p.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            p.addQuadCurve(to: CGPoint(x: rect.minX + tr, y: rect.minY + tr), control: CGPoint(x: rect.minX + tr, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.minX + tr, y: rect.maxY - br))
+            p.addQuadCurve(to: CGPoint(x: rect.minX + tr + br, y: rect.maxY), control: CGPoint(x: rect.minX + tr, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            p.closeSubpath()
+            return p
+        }
         p.move(to: CGPoint(x: rect.minX, y: rect.minY))
         p.addQuadCurve(to: CGPoint(x: rect.minX + tr, y: rect.minY + tr), control: CGPoint(x: rect.minX + tr, y: rect.minY))
         p.addLine(to: CGPoint(x: rect.minX + tr, y: rect.maxY - br))
@@ -34,7 +46,7 @@ struct NotchRootView: View {
     var body: some View {
         let size = model.currentSize
         let tr: CGFloat = model.isExpanded ? 14 : 8
-        let shape = NotchShape(topRadius: tr, bottomRadius: model.isExpanded ? 28 : 13)
+        let shape = NotchShape(topRadius: tr, bottomRadius: model.isExpanded ? 28 : 13, flushRight: model.cornerMode)
         ZStack(alignment: .top) {
             shape.fill(Color.black)
             Group {
@@ -55,8 +67,9 @@ struct NotchRootView: View {
         }
         .frame(width: size.width, height: size.height)
         .clipShape(shape)   // everything, including content that is fading out, is cut to the notch outline
-        .scaleEffect(model.isHidden ? 0.82 : 1, anchor: .top)
-        .offset(y: model.isHidden ? -(size.height + 6) : 0)
+        // Full-screen tuck-away: slide up and shrink. In corner mode the menu instead grows out of (and shrinks back into) the corner.
+        .scaleEffect(model.isHidden && !model.cornerMode ? 0.82 : 1, anchor: .top)
+        .offset(y: model.isHidden && !model.cornerMode ? -(size.height + 6) : 0)
         .opacity(model.isHidden ? 0 : 1)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: model.cornerMode ? .topTrailing : .top)
         .animation(NotchWindowController.spring, value: model.layoutKey)

@@ -34,6 +34,7 @@ Without `SIGN_ID` the app is ad-hoc signed, and macOS will ask you to use "Open 
 
 ## Releases
 
+- **v1.1.2**: with the notch off, the menu now grows out of the top-right screen corner itself (square against the corner, rounded on the inside) instead of appearing as a notch.
 - **v1.1.1**: with the notch switched off, hover the top-right screen corner to open the notch menu (and Settings).
 - **v1.1.0**: Liquid Glass buttons and menus on macOS 26+, a smooth tuck-away when a full-screen app is in use, and Settings toggles to show or hide the notch and the rounded corners (never both off).
 - **v1.0.0**: SudoNotch, notarized, Spotlight-style controls, lid-closed timer, Caffeinate, smoother open and close animation.

@@ -58,7 +58,7 @@ struct NotchRootView: View {
         .scaleEffect(model.isHidden ? 0.82 : 1, anchor: .top)
         .offset(y: model.isHidden ? -(size.height + 6) : 0)
         .opacity(model.isHidden ? 0 : 1)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: model.cornerMode ? .topTrailing : .top)
         .animation(NotchWindowController.spring, value: model.layoutKey)
         .animation(.easeInOut(duration: 0.2), value: model.transient)
         .environment(\.colorScheme, .dark)

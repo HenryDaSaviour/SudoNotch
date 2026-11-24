@@ -233,7 +233,7 @@ struct GeneralPage: View {
         Card("What to show") {
             ToggleRow(title: "Show the notch",
                       subtitle: AppSettings.hasHardwareNotch ? "Always on for Macs with a real notch"
-                                : (settings.notchEnabled && !settings.cornersEnabled ? "Turn on rounded corners to hide the notch" : "The black bar with music, clipboard, shelf and tools"),
+                                : (settings.notchEnabled && !settings.cornersEnabled ? "Turn on rounded corners to hide the notch" : settings.notchEnabled ? "The black bar with music, clipboard, shelf and tools" : "Off: hover the top-right screen corner to open the menu"),
                       isOn: Binding(get: { settings.notchEnabled },
                                     set: { v in if v || settings.cornersEnabled { settings.notchEnabled = v } }))
                 .opacity(notchLocked ? 0.5 : 1).disabled(notchLocked)

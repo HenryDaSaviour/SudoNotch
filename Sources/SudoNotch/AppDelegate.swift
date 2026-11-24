@@ -215,7 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             "loginItem": LoginItem.isEnabled, "locked": model.isLocked,
             "lockScreenAvailable": LockScreenSupport.shared.isAvailable, "panelSpaces": LockScreenSupport.shared.debugSpaces(for: notch.panel),
             "keyboardLocked": model.keyboard.isLocked, "keyboardNeedsPermission": model.keyboard.needsPermission,
-            "lidAwake": model.lid.isAwakeWhenClosed, "notchHidden": model.isHidden, "lockScreenStatus": Int(LockScreenSupport.shared.lastStatus), "screen": NSStringFromRect(notch.screen?.frame ?? .zero),
+            "lidAwake": model.lid.isAwakeWhenClosed, "notchHidden": model.isHidden, "cornerMode": model.cornerMode, "lockScreenStatus": Int(LockScreenSupport.shared.lastStatus), "screen": NSStringFromRect(notch.screen?.frame ?? .zero),
         ]
         if let data = try? JSONSerialization.data(withJSONObject: state, options: [.prettyPrinted, .sortedKeys]) {
             try? data.write(to: dir.appendingPathComponent("state.json"))

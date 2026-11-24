@@ -107,13 +107,20 @@ final class NotchWindowController {
         if model.baseSize != base { model.baseSize = base }
         let f = s.frame, w = Self.windowSize
         screenFrame = f
-        let frame = CGRect(x: f.midX - w.width / 2, y: f.maxY - w.height, width: w.width, height: w.height)
+        let frame = CGRect(x: model.cornerMode ? f.maxX - w.width : f.midX - w.width / 2, y: f.maxY - w.height, width: w.width, height: w.height)
         if panel.frame != frame { panel.setFrame(frame, display: true) }
     }
 
     func shapeRect(_ size: CGSize) -> CGRect {
         let f = screenFrame
-        return CGRect(x: f.midX - size.width / 2, y: f.maxY - size.height, width: size.width, height: size.height)
+        return CGRect(x: model.cornerMode ? f.maxX - size.width : f.midX - size.width / 2, y: f.maxY - size.height, width: size.width, height: size.height)
+    }
+
+    /// What the mouse has to touch to open the notch: the notch itself, or (notch switched off) the top-right screen corner.
+    private var openZone: CGRect {
+        guard model.cornerMode else { return shapeRect(model.collapsedSize) }
+        let f = screenFrame
+        return CGRect(x: f.maxX - 18, y: f.maxY - 18, width: 18, height: 18)
     }
 
     var currentShapeRect: CGRect { shapeRect(model.currentSize) }
@@ -153,14 +160,16 @@ final class NotchWindowController {
     func applySettings() {
         let sharing: NSWindow.SharingType = settings.hideFromSharing ? .none : .readOnly
         if panel.sharingType != sharing { panel.sharingType = sharing }
-        if !settings.notchEnabled {
+        let corner = !settings.notchEnabled
+        if model.cornerMode != corner {
+            model.cornerMode = corner
             if model.isExpanded { setExpanded(false) }
             model.isPinned = false
-            if panel.isVisible { panel.orderOut(nil) }
-            return
+            reposition()   // the panel sits at the top centre normally, and flush with the top-right corner when the notch is off
         }
         if !panel.isVisible { panel.orderFrontRegardless() }
-        let hide = fullscreenHidden && settings.hideInFullscreen && !model.isExpanded
+        // Notch off: nothing is drawn until the corner is touched, then the menu opens right there.
+        let hide = corner ? !model.isExpanded : (fullscreenHidden && settings.hideInFullscreen && !model.isExpanded)
         if !debugHoldHide { setHidden(hide) }
     }
 
@@ -207,7 +216,7 @@ final class NotchWindowController {
         // Fast exit: the cursor is nowhere near the notch and nothing is open, so there's nothing to decide.
         if !model.isExpanded, !model.isFileDragActive {
             let p = NSEvent.mouseLocation
-            if p.y < screenFrame.maxY - 70 || abs(p.x - screenFrame.midX) > 340 {
+            if p.y < screenFrame.maxY - 70 || (model.cornerMode ? p.x < screenFrame.maxX - 60 : abs(p.x - screenFrame.midX) > 340) {
                 if expandWork != nil { cancelExpand() }
                 return
             }
@@ -229,7 +238,7 @@ final class NotchWindowController {
 
     func mouseChanged() {
         guard !model.isLocked else { panel.ignoresMouseEvents = true; return }
-        guard settings.notchEnabled, panel.alphaValue > 0 || model.isExpanded else {
+        guard (settings.notchEnabled && panel.alphaValue > 0) || model.cornerMode || model.isExpanded else {
             panel.ignoresMouseEvents = true
             return
         }
@@ -245,10 +254,10 @@ final class NotchWindowController {
             }
         } else {
             panel.ignoresMouseEvents = true
-            let near = shapeRect(model.collapsedSize)
+            let near = openZone
             if model.isFileDragActive {
                 if hit(near, p, pad: 50) { model.tab = .shelf; setExpanded(true) }
-            } else if settings.hoverToOpen, hit(near, p, pad: 2) {
+            } else if settings.hoverToOpen || model.cornerMode, hit(near, p, pad: model.cornerMode ? 0 : 2) {
                 scheduleExpand()
             } else {
                 cancelExpand()
@@ -260,7 +269,7 @@ final class NotchWindowController {
         guard expandWork == nil else { return }
         let w = DispatchWorkItem { [weak self] in
             self?.expandWork = nil
-            guard let self, hit(shapeRect(model.collapsedSize), NSEvent.mouseLocation, pad: 2) else { return }
+            guard let self, hit(openZone, NSEvent.mouseLocation, pad: model.cornerMode ? 0 : 2) else { return }
             setExpanded(true)
         }
         expandWork = w
@@ -284,7 +293,7 @@ final class NotchWindowController {
     private func cancelCollapse() { collapseWork?.cancel(); collapseWork = nil }
 
     func setExpanded(_ on: Bool) {
-        guard model.isExpanded != on, !on || (settings.notchEnabled && !model.isLocked) else { return }
+        guard model.isExpanded != on, !on || !model.isLocked else { return }
         cancelExpand(); cancelCollapse()
         if on {
             panel.alphaValue = 1
@@ -293,8 +302,16 @@ final class NotchWindowController {
             model.isEditing = false
             panel.resignKey()
         }
+        if model.cornerMode, on { setHidden(false) }   // reveal the panel before it grows out of the corner
         withAnimation(Self.spring) { model.isExpanded = on }
         panel.ignoresMouseEvents = !on
+        if model.cornerMode, !on {
+            // Once it has shrunk back, make the idle pill invisible again.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                guard let self, model.cornerMode, !model.isExpanded else { return }
+                setHidden(true)
+            }
+        }
     }
 
     func toggle() { setExpanded(!model.isExpanded) }

@@ -42,6 +42,8 @@ final class NotchModel: ObservableObject {
     @Published var isLocked = false
     /// True while the notch is invisible (full-screen app): animations pause so nothing is drawn for nobody.
     @Published var isHidden = false
+    /// The notch itself is switched off (only the rounded corners are shown): the menu opens from the top-right corner instead.
+    @Published var cornerMode = false
     @Published var tab: NotchTab = .music
     @Published var transient: Transient?
     @Published var baseSize = CGSize(width: 190, height: 32)
